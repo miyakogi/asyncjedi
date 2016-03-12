@@ -10,23 +10,19 @@ import argparse
 from asyncio import get_event_loop
 from jedi.api import Script
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--port', type=int, default=0)
+
+_tasks = []
+_cache = {}
+
 
 def _to_complete_item(c) -> dict:
     return dict(word=c.name, abbr=c.name, menu=c.description,
                 info=c.docstring(), icase=1,)
 
 
-async def find_completes(text, line, col, path, word):
-    if word:
-        return await fuzzy_match(text, line, col, path, word)
-    else:
-        return await normal_match(text, line, col, path)
-
-
-async def fuzzy_match(text, line, col, path, word:str):
-    s = Script('\n'.join(text), line=line, column=col - len(word) - 1,
-               path=path)
-    await asyncio.sleep(0)
+async def fuzzy_match(completions, word: str):
     result = []
     exact_re = re.compile(r'^' + word)
     icase_re = re.compile(r'^' + word, re.I)
@@ -34,7 +30,7 @@ async def fuzzy_match(text, line, col, path, word:str):
     exact_match = []
     icase_match = []
     fuzzy_match = []
-    for c in s.completions():
+    for c in completions:
         name = c.name
         if exact_re.match(name):
             exact_match.append(_to_complete_item(c))
@@ -49,10 +45,8 @@ async def fuzzy_match(text, line, col, path, word:str):
     return result
 
 
-async def normal_match(text, line, col, path):
-    s = Script('\n'.join(text), line=line, column=col - 1, path=path)
-    await asyncio.sleep(0)
-    result = [_to_complete_item(c) for c in s.completions()]
+async def normal_match(completions):
+    result = [_to_complete_item(c) for c in completions]
     await asyncio.sleep(0)
     return result
 
@@ -64,27 +58,37 @@ async def complete(msg, transport):
     line = info['line']
     text = info['text']
     path = info['path']
-    cur_line = text[line - 1][:col]
+    cur_line = text[line - 1][:col-1]
     match = re.search(r'\w+$', cur_line)
     if match:
         word = match.group(0)
     else:
         word = ''
-    start_col = col - len(word)
-    resp = [start_col]
+    start_col = col - 1 - len(word)
+    line_text = cur_line[:start_col]
+    resp = [start_col+1]
+    if not (path == _cache.get('path') and line == _cache.get('line') and
+            len(text) == len(_cache.get('text')) and
+            line_text == _cache.get('line_text')):
+        script = Script('\n'.join(text), line=line, column=start_col)
+        completions = tuple(script.completions())
+        _cache.update(path=path, line=line, text=text, line_text=line_text,
+                      completions=completions)
+    else:
+        completions = _cache.get('completions')
+    await asyncio.sleep(0)
 
-    result = await find_completes(text, line, col, path, word)
+    if word:
+        result = await fuzzy_match(completions, word)
+    else:
+        result = await normal_match(completions)
+
     if result:
         resp.append(result)
         transport.write(json.dumps([handle, resp]).encode('utf-8'))
     else:
         # print('No result, close connection')
         transport.close()
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--port', type=int, default=0)
-
-_tasks = []
 
 
 class IOServer(asyncio.Protocol):
