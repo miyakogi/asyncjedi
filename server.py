@@ -105,8 +105,11 @@ class IOServer(asyncio.Protocol):
             _tasks.pop().cancel()
 
         msg = json.loads(data.decode('utf-8'))
-        self.task = asyncio.ensure_future(complete(msg, self.transport))
-        _tasks.append(self.task)
+        if msg[1].get('clear_cache'):
+            _cache.clear()
+        else:
+            self.task = asyncio.ensure_future(complete(msg, self.transport))
+            _tasks.append(self.task)
 
     def eof_received(self):
         if self.task in _tasks and not self.task.done():

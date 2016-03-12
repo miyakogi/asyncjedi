@@ -52,6 +52,20 @@ function! asyncjedi#complete() abort
   return ''
 endfunction
 
+function! asyncjedi#clear_cache() abort
+  if asyncjedi#is_running()
+    let ch = ch_open('localhost:' . s:port, {'mode': 'json'})
+    let st = ch_status(ch)
+    if st ==# 'open'
+      let msg = {'clear_cache':1}
+      call ch_sendexpr(ch, msg)
+    else
+      echomsg 'channel error: ' . st
+    endif
+  endif
+  return ''
+endfunction
+
 function! s:ch_clear() abort
   for ch in s:handlers
     if ch_status(ch) ==# 'open'
