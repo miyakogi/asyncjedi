@@ -97,6 +97,9 @@ function! asyncjedi#mapping() abort
     call s:map(k)
     call s:map(toupper(k))
   endfor
+  for k in split('123456789', '\zs')
+    call s:map(k)
+  endfor
   call s:map('_')
   call s:map('@')
   call s:map('\<BS>')
