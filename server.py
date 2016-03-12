@@ -16,15 +16,16 @@ def _to_complete_item(c) -> dict:
                 info=c.docstring(), icase=1,)
 
 
-async def find_completes(text, line, col, word):
+async def find_completes(text, line, col, path, word):
     if word:
-        return await fuzzy_match(text, line, col, word)
+        return await fuzzy_match(text, line, col, path, word)
     else:
-        return await normal_match(text, line, col)
+        return await normal_match(text, line, col, path)
 
 
-async def fuzzy_match(text, line, col, word:str):
-    s = Script('\n'.join(text), line=line, column=col - len(word) - 1)
+async def fuzzy_match(text, line, col, path, word:str):
+    s = Script('\n'.join(text), line=line, column=col - len(word) - 1,
+               path=path)
     await asyncio.sleep(0)
     result = []
     exact_re = re.compile(r'^' + word)
@@ -48,8 +49,8 @@ async def fuzzy_match(text, line, col, word:str):
     return result
 
 
-async def normal_match(text, line, col):
-    s = Script('\n'.join(text), line=line, column=col - 1)
+async def normal_match(text, line, col, path):
+    s = Script('\n'.join(text), line=line, column=col - 1, path=path)
     await asyncio.sleep(0)
     result = [_to_complete_item(c) for c in s.completions()]
     await asyncio.sleep(0)
@@ -58,10 +59,11 @@ async def normal_match(text, line, col):
 
 async def complete(msg, transport):
     handle = msg[0]
-    resp = []
-    col = msg[1]['col']
-    line = msg[1]['line']
-    text = msg[1]['text']
+    info = msg[1]
+    col = info['col']
+    line = info['line']
+    text = info['text']
+    path = info['path']
     cur_line = text[line - 1][:col]
     match = re.search(r'\w+$', cur_line)
     if match:
@@ -69,11 +71,10 @@ async def complete(msg, transport):
     else:
         word = ''
     start_col = col - len(word)
-    resp.append(start_col)
+    resp = [start_col]
 
-    result = await find_completes(text, line, col, word)
+    result = await find_completes(text, line, col, path, word)
     if result:
-        # print(result)
         resp.append(result)
         transport.write(json.dumps([handle, resp]).encode('utf-8'))
     else:
@@ -81,7 +82,7 @@ async def complete(msg, transport):
         transport.close()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--port', type=int, default=8891)
+parser.add_argument('--port', type=int, default=0)
 
 _tasks = []
 

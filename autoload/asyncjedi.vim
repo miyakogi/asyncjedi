@@ -35,6 +35,7 @@ function! s:complete() abort
       let msg.line = line('.')
       let msg.col = col('.')
       let msg.text = getline(0, '$')
+      let msg.path = expand('%:p')  " shoud use <afile>?
       call ch_sendexpr(ch, msg, {'callback': 'asyncjedi#complete_cb'})
       call s:ch_clear()
       let s:handlers = [ch]
