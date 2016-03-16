@@ -117,14 +117,4 @@ function! asyncjedi#start_server() abort
           \ {'callback': 'asyncjedi#server_started'})
   endif
   call asyncjedi#mapping()
-  augroup asyncjedi
-    autocmd VimLeave * call asyncjedi#stop_server()
-  augroup END
-endfunction
-
-function! asyncjedi#stop_server() abort
-  if asyncjedi#is_running() && exists('s:server')
-    call job_stop(s:server)
-    unlet s:port
-  endif
 endfunction
