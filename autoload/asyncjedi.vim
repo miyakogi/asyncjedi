@@ -77,6 +77,8 @@ endfunction
 function! asyncjedi#server_started(ch, msg) abort
   if a:msg =~ '\m^\d\+$'
     let s:port = str2nr(a:msg)
+  elseif a:msg ==# 'DETACH'
+    return
   else
     echomsg a:msg
   endif
