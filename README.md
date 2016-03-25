@@ -16,8 +16,10 @@ Lots of other jedi's features (goto, rename, usage, and so on) are not implement
 
 ## Usage
 
+**Extremely** recommended to add `noinsert` and `noselect` options to `'completeopt'`.
+
 ```vim
-autocmd myvimrc FileType python setlocal completeopt=menu,menuone,noinsert,noselect
+autocmd myvimrc FileType python setlocal completeopt+=noinsert,noselect
 ```
 
 This plugin will conflict with other completion plugins.
@@ -32,5 +34,9 @@ autocmd myvimrc FileType python NeoCompleteLock
 
 ## Configuration
 
-Configuration and error-check are not implemented yet.
-Be careful.
+This plugin searches `setup.py` upwards from the current editing file, to find project root.
+If you want to use another file name, for example `.gitignore`, add the following setting.
+
+```vim
+let g:asyncjedi_root_filename = '.gitignore'
+```
