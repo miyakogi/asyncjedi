@@ -18,7 +18,7 @@ endfunction
 
 function! asyncjedi#complete_cb(ch, msg) abort
   call ch_close(a:ch)
-  if mode() ==# 'i' && !s:paused
+  if mode() ==# 'i' && expand('%:p') ==# a:msg[2]
     call complete(a:msg[0], a:msg[1])
   endif
   let ind = index(s:handlers, a:ch)
@@ -36,11 +36,11 @@ function! s:complete() abort
       let msg.line = line('.')
       let msg.col = col('.')
       let msg.text = getline(0, '$')
-      let msg.path = expand('%:p')  " shoud use <afile>?
+      let msg.path = expand('%:p')
+      let msg.root = get(b:, 'asyncjedi_root_dir')
       call ch_sendexpr(ch, msg, {'callback': 'asyncjedi#complete_cb'})
       call s:ch_clear()
       let s:handlers = [ch]
-      let s:paused = v:false
     else
       echomsg 'channel error: ' . st
     endif

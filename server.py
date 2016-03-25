@@ -18,8 +18,14 @@ _cache = {}
 
 
 def _to_complete_item(c) -> dict:
-    return dict(word=c.name, abbr=c.name, menu=c.description,
-                info=c.docstring(), icase=1,)
+    d = dict(
+        word=c.name,
+        abbr=c.name,
+        menu=c.description,  # for item selection menu
+        info=c.docstring(),  # for preview window
+        icase=1,
+    )
+    return d
 
 
 async def fuzzy_match(completions, word: str):
@@ -41,13 +47,11 @@ async def fuzzy_match(completions, word: str):
     result.extend(exact_match)
     result.extend(icase_match)
     result.extend(fuzzy_match)
-    await asyncio.sleep(0)
     return result
 
 
-async def normal_match(completions):
+def normal_match(completions):
     result = [_to_complete_item(c) for c in completions]
-    await asyncio.sleep(0)
     return result
 
 
@@ -58,6 +62,9 @@ async def complete(msg, transport):
     line = info['line']
     text = info['text']
     path = info['path']
+    root = info.get('root')
+    if root and root not in sys.path:
+        sys.path.append(root)
     cur_line = text[line - 1][:col-1]
     match = re.search(r'\w+$', cur_line)
     if match:
@@ -76,19 +83,18 @@ async def complete(msg, transport):
                       completions=completions)
     else:
         completions = _cache.get('completions')
-    await asyncio.sleep(0)
 
     if word:
         result = await fuzzy_match(completions, word)
     else:
-        result = await normal_match(completions)
+        result = normal_match(completions)
 
     if result:
         resp.append(result)
-        transport.write(json.dumps([handle, resp]).encode('utf-8'))
-    else:
-        # print('No result, close connection')
-        transport.close()
+        resp.append(path)
+        if not transport.is_closing():
+            transport.write(json.dumps([handle, resp]).encode('utf-8'))
+    del result
 
 
 class IOServer(asyncio.Protocol):
@@ -102,7 +108,8 @@ class IOServer(asyncio.Protocol):
 
     def data_received(self, data):
         while _tasks:
-            _tasks.pop().cancel()
+            _t = _tasks.pop()
+            _t.cancel()
 
         msg = json.loads(data.decode('utf-8'))
         if msg[1].get('clear_cache'):
