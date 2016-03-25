@@ -1,6 +1,12 @@
 let s:pyscript = expand('<sfile>:p:h:h') . '/server.py'
 let s:handlers = []
-let s:paused = v:false
+
+function! asyncjedi#set_root(fname) abort
+  let file = findfile(a:fname, escape(expand('<afile>:p:h'), ' ') . ';')
+  if l:file != ''
+    let b:asyncjedi_root_dir = substitute(l:file, '/setup.py$', '', 'g' )
+  endif
+endfunction
 
 function! asyncjedi#is_running() abort
   if exists('s:port')
@@ -8,11 +14,6 @@ function! asyncjedi#is_running() abort
   else
     return v:false
   endif
-endfunction
-
-function! asyncjedi#pause() abort
-  let s:paused = v:true
-  return ''
 endfunction
 
 function! asyncjedi#complete_cb(ch, msg) abort
@@ -28,7 +29,7 @@ endfunction
 
 function! s:complete() abort
   if asyncjedi#is_running()
-    let ch = ch_open('localhost:' . s:port, {'mode': 'json'})
+    let ch = ch_open('localhost:' . s:port, {'mode': 'json', 'waittime': 3})
     let st = ch_status(ch)
     if st ==# 'open'
       let msg = {}
@@ -77,10 +78,10 @@ endfunction
 function! asyncjedi#server_started(ch, msg) abort
   if a:msg =~ '\m^\d\+$'
     let s:port = str2nr(a:msg)
-  elseif a:msg ==# 'DETACH'
+  elseif a:msg == '' || a:msg ==# 'DETACH'
     return
   else
-    echomsg a:msg
+    echomsg 'AsyncJediServer message: ' . string(a:msg)
   endif
 endfunction
 
@@ -109,14 +110,14 @@ function! asyncjedi#mapping() abort
 endfunction
 
 function! asyncjedi#start_server() abort
-  let ch = ch_open('localhost:8891', {'waittime': 1})
+  let ch = ch_open('localhost:8891', {'waittime': 10})
   if ch_status(ch) ==# 'open'
     " for debug
     let s:port = 8891
+    echomsg 'AsyncJedi: use debug server at localhost:8891'
     call ch_close(ch)
   else
     let s:server = job_start(['python3', s:pyscript],
           \ {'callback': 'asyncjedi#server_started'})
   endif
-  call asyncjedi#mapping()
 endfunction
