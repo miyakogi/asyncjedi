@@ -101,7 +101,7 @@ async def complete(msg, transport):
     if result:
         resp.append(result)
         resp.append(path)
-        if not transport.is_closing():
+        if not transport._closing:
             transport.write(json.dumps([handle, resp]).encode('utf-8'))
     del result
 
