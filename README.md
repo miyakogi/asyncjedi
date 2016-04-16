@@ -51,3 +51,11 @@ If you encounter a performance issue, the following setting may help.
 ```vim
 let g:asyncjedi_no_detail = 1
 ```
+
+#### Default
+
+![asyncjedi1.png](https://raw.githubusercontent.com/wiki/miyakogi/asyncjedi/asyncjedi1.png)
+
+#### With no-detail option
+
+![asyncjedi2.png](https://raw.githubusercontent.com/wiki/miyakogi/asyncjedi/asyncjedi2.png)
