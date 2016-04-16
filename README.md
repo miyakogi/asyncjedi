@@ -34,7 +34,7 @@ autocmd myvimrc FileType python NeoCompleteLock
 
 ## Configuration
 
-### Set root
+### Project root
 
 This plugin searches `setup.py` upwards from the current file, to find project root.
 If you want to use another file name, for example `.gitignore`, add the following setting.
