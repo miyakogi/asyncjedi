@@ -11,6 +11,7 @@ Asynchronous Jedi auto-completion plugin for vim, using job and channel feature
 - Asynchronous, non-blocking auto-completion
 - Fast startup
 - Fuzzy completion
+- Support virtualenv
 
 Lots of other jedi's features (goto, rename, usage, and so on) are not implemented.
 
