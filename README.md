@@ -34,9 +34,20 @@ autocmd myvimrc FileType python NeoCompleteLock
 
 ## Configuration
 
-This plugin searches `setup.py` upwards from the current editing file, to find project root.
+### Set root
+
+This plugin searches `setup.py` upwards from the current file, to find project root.
 If you want to use another file name, for example `.gitignore`, add the following setting.
 
 ```vim
 let g:asyncjedi_root_filename = '.gitignore'
+```
+
+### Disable additional information
+
+Jedi sometimes takes too long time to get docstring/descriptions.
+If you encounter a performance issue, the following setting may help.
+
+```vim
+let g:asyncjedi_no_detail = 1
 ```
