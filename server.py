@@ -7,24 +7,33 @@ import re
 import socket
 import asyncio
 import argparse
+import logging
 from asyncio import get_event_loop
 from jedi.api import Script
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--port', type=int, default=0)
+parser.add_argument('--include-detail', action='store_true')
+options, unknown_args = parser.parse_known_args()
+if unknown_args:
+    logging.warn('Get unknown arguments: {}'.format(' '.join(unknown_args)))
 
 _tasks = []
 _cache = {}
 
 
-def _to_complete_item(c) -> dict:
+def _to_complete_item(c, include_detail=options.include_detail) -> dict:
     d = dict(
         word=c.name,
         abbr=c.name,
-        menu=c.description,  # for item selection menu
-        info=c.docstring(),  # for preview window
         icase=1,
     )
+    if include_detail:
+        # To obtain these information, sometimes jedi takes TOO LONG TIME.
+        d.update(dict(
+            menu=c.description,  # for item selection menu
+            info=c.docstring(),  # for preview window
+        ))
     return d
 
 
@@ -126,7 +135,6 @@ class IOServer(asyncio.Protocol):
 
 
 async def run():
-    options = parser.parse_args()
     loop = asyncio.get_event_loop()
     server = await loop.create_server(
         IOServer, host='localhost', port=options.port)

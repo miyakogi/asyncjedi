@@ -117,7 +117,10 @@ function! asyncjedi#start_server() abort
     echomsg 'AsyncJedi: use debug server at localhost:8891'
     call ch_close(ch)
   else
-    let s:server = job_start(['python3', s:pyscript],
-          \ {'callback': 'asyncjedi#server_started'})
+    let cmd = ['python3', s:pyscript]
+    if !get(g:, 'asyncjedi_no_detail')
+      call add(cmd, '--include-detail')
+    endif
+    let s:server = job_start(cmd, {'callback': 'asyncjedi#server_started'})
   endif
 endfunction
