@@ -19,6 +19,10 @@ if unknown_args:
 
 _tasks = []
 _cache = {}
+try:
+    ensure_future = asyncio.ensure_future
+except AttributeError:
+    ensure_future = asyncio.async
 
 
 def _to_complete_item(c, include_detail=options.include_detail) -> dict:
@@ -126,7 +130,7 @@ class IOServer(asyncio.Protocol):
         if msg[1].get('clear_cache'):
             _cache.clear()
         else:
-            self.task = asyncio.ensure_future(complete(msg, self.transport))
+            self.task = ensure_future(complete(msg, self.transport))
             _tasks.append(self.task)
 
     def eof_received(self):
