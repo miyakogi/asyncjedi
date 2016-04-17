@@ -6,6 +6,10 @@ Asynchronous Jedi auto-completion plugin for vim, using job and channel feature
 
 **!!! THIS PLUGIN IS HIGHLY EXPERIMENTAL AND UNSTABLE !!!**
 
+## Screen Cast
+
+![screencast1.gif](https://raw.githubusercontent.com/wiki/miyakogi/asyncjedi/screencast1.gif)
+
 ## Features
 
 - Asynchronous, non-blocking auto-completion
