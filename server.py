@@ -8,7 +8,6 @@ import socket
 import asyncio
 import argparse
 import logging
-from asyncio import get_event_loop
 from jedi.api import Script
 
 parser = argparse.ArgumentParser()
@@ -37,7 +36,8 @@ def _to_complete_item(c, include_detail=options.include_detail) -> dict:
     return d
 
 
-async def fuzzy_match(completions, word: str):
+@asyncio.coroutine
+def fuzzy_match(completions, word: str):
     result = []
     exact_re = re.compile(r'^' + word)
     icase_re = re.compile(r'^' + word, re.I)
@@ -53,6 +53,7 @@ async def fuzzy_match(completions, word: str):
             icase_match.append(_to_complete_item(c))
         elif fuzzy_re.match(name):
             fuzzy_match.append(_to_complete_item(c))
+    yield from asyncio.sleep(0)
     result.extend(exact_match)
     result.extend(icase_match)
     result.extend(fuzzy_match)
@@ -64,7 +65,8 @@ def normal_match(completions):
     return result
 
 
-async def complete(msg, transport):
+@asyncio.coroutine
+def complete(msg, transport):
     handle = msg[0]
     info = msg[1]
     col = info['col']
@@ -94,7 +96,7 @@ async def complete(msg, transport):
         completions = _cache.get('completions')
 
     if word:
-        result = await fuzzy_match(completions, word)
+        result = yield from fuzzy_match(completions, word)
     else:
         result = normal_match(completions)
 
@@ -134,15 +136,16 @@ class IOServer(asyncio.Protocol):
         return None
 
 
-async def run():
+@asyncio.coroutine
+def run():
     loop = asyncio.get_event_loop()
-    server = await loop.create_server(
+    server = yield from loop.create_server(
         IOServer, host='localhost', port=options.port)
     return server
 
 
 def main():
-    loop = get_event_loop()
+    loop = asyncio.get_event_loop()
     server = loop.run_until_complete(run())
     for sock in server.sockets:
         if sock.family == socket.AF_INET:
